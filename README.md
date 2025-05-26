@@ -1,4 +1,4 @@
-# Deepchain Assignment
+# Event Buddy
 
 This repository contains the Event Buddy project with separate frontend and backend components.
 
