@@ -33,6 +33,7 @@ npm install --save-dev @types/js-cookie
 ```
 
 2.1. Create an Account on ImgBB, then get the API key. It is cruicial as it's used in createEvent/UpdateEvent feature
+2.2. add domain of uploaded image in next.config.ts
 
 3. Create a `.env` file in the root directory with the following content:
 
