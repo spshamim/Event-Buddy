@@ -96,15 +96,14 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
         formData.append("image", file);
 
         try {
-            const response = await axios.patch(
+            const response = await axios.post(
                 `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
                 formData
             );
             return response.data.data.display_url;
         } catch (error: any) {
-            toast.error(
-                `Error uploading image: ${error.response?.data?.message}`
-            );
+            console.log(error);
+            toast.error(`Error uploading image: ${error?.message}`);
             throw error;
         }
     };
@@ -112,6 +111,72 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!event) return;
+
+        if (
+            formData.title === "" ||
+            formData.description === "" ||
+            formData.date === "" ||
+            formData.time === "" ||
+            formData.location === "" ||
+            formData.totalSeats === "" ||
+            formData.tags === ""
+        ) {
+            toast.error("Please fill all the fields");
+            return;
+        }
+
+        // Validate title length
+        if (formData.title.length < 6) {
+            toast.error("Title must be at least 6 characters long");
+            return;
+        }
+
+        // Validate description length
+        if (formData.description.length < 6) {
+            toast.error("Description must be at least 6 characters long");
+            return;
+        }
+
+        // Validate tags format
+        const tagsRegex = /^[a-zA-Z]+(?:,[a-zA-Z]+)*$/;
+        if (!tagsRegex.test(formData.tags)) {
+            toast.error(
+                "Tags must be comma-separated words without spaces, numbers, or special characters"
+            );
+            return;
+        }
+
+        // Validate totalSeats
+        const seatsRegex = /^\d+$/;
+        if (!seatsRegex.test(formData.totalSeats)) {
+            toast.error(
+                "Total seats must be a number without any special characters or letters"
+            );
+            return;
+        }
+
+        // Validate time format
+        const timeRegex =
+            /^([0-1]?[0-9]|2[0-3]):[0-5][0-9] (AM|PM) - ([0-1]?[0-9]|2[0-3]):[0-5][0-9] (AM|PM)$/;
+        if (!timeRegex.test(formData.time)) {
+            toast.error("Time must be in format: HH:MM AM - HH:MM PM");
+            return;
+        }
+
+        // Validate image format
+        const allowedFormats = [".jpg", ".jpeg", ".png"];
+        const fileExtension = "." + image?.name.split(".").pop()?.toLowerCase();
+        if (!allowedFormats.includes(fileExtension)) {
+            toast.error("Only .jpg, .jpeg, and .png image formats are allowed");
+            return;
+        }
+
+        // Validate image size (5MB = 5 * 1024 * 1024 bytes)
+        const maxSize = 5 * 1024 * 1024;
+        if (image && image.size > maxSize) {
+            toast.error("Image size must be less than 5MB");
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -132,8 +197,10 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
             onClose();
             toast.success("Event updated successfully");
         } catch (error: any) {
+            console.log(error);
             toast.error(
-                `Error updating event: ${error.response?.data?.message}`
+                `Error updating event: ${error.response?.data?.message}` ||
+                    error?.message
             );
         } finally {
             setIsSubmitting(false);
@@ -170,7 +237,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                             name="title"
                             value={formData.title}
                             onChange={handleChange}
-                            required
                             className="w-full border border-[#e0e2f1] rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7B8BFF]"
                         />
                     </div>
@@ -184,7 +250,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                                 name="date"
                                 value={formData.date}
                                 onChange={handleChange}
-                                required
                                 className="w-full border border-[#e0e2f1] rounded-md px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-[#7B8BFF]"
                             />
                             <FaRegCalendarAlt className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7B8BFF]" />
@@ -201,7 +266,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                                 value={formData.time}
                                 onChange={handleChange}
                                 placeholder="e.g. 09:00 AM - 11:00 AM"
-                                required
                                 className="w-full border border-[#e0e2f1] rounded-md px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-[#7B8BFF]"
                             />
                             <FaRegClock className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7B8BFF]" />
@@ -215,7 +279,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
-                            required
                             className="w-full border border-[#e0e2f1] rounded-md px-4 py-2 min-h-[60px] focus:outline-none focus:ring-2 focus:ring-[#7B8BFF]"
                         />
                     </div>
@@ -228,7 +291,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                             name="location"
                             value={formData.location}
                             onChange={handleChange}
-                            required
                             className="w-full border border-[#e0e2f1] rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7B8BFF]"
                         />
                     </div>
@@ -242,7 +304,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                                 name="totalSeats"
                                 value={formData.totalSeats}
                                 onChange={handleChange}
-                                required
                                 min="1"
                                 className="w-full border border-[#e0e2f1] rounded-md px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-[#7B8BFF]"
                             />
@@ -258,7 +319,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                             name="tags"
                             value={formData.tags}
                             onChange={handleChange}
-                            required
                             className="w-full border border-[#e0e2f1] rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#7B8BFF]"
                         />
                     </div>
